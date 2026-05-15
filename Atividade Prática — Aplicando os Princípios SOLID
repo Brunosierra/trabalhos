@@ -1,0 +1,86 @@
+using System;
+    {
+        public void Gerar(Pedido pedido)
+        {
+            Console.WriteLine("Relatório do pedido gerado.");
+        }
+    }
+
+    
+    // SERVIÇO PRINCIPAL
+    
+    class PedidoService
+    {
+        private IDesconto desconto;
+        private INotificacao notificacao;
+        private IPedidoRepository repository;
+        private IRelatorioPedido relatorio;
+
+        public PedidoService(
+            IDesconto desconto,
+            INotificacao notificacao,
+            IPedidoRepository repository,
+            IRelatorioPedido relatorio)
+        {
+            this.desconto = desconto;
+            this.notificacao = notificacao;
+            this.repository = repository;
+            this.relatorio = relatorio;
+        }
+
+        public void ProcessarPedido(Pedido pedido)
+        {
+            // Aplicando desconto
+            pedido.ValorTotal = desconto.AplicarDesconto(pedido.ValorTotal);
+
+            // Salvando pedido
+            repository.Salvar(pedido);
+
+            // Enviando notificação
+            notificacao.Enviar(pedido.Cliente);
+
+            // Gerando relatório
+            relatorio.Gerar(pedido);
+
+            Console.WriteLine("Pedido processado com sucesso!");
+            Console.WriteLine("Valor final: R$ " + pedido.ValorTotal);
+        }
+    }
+
+    
+    // PROGRAMA PRINCIPAL
+    
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Pedido pedido = new Pedido();
+
+            pedido.Cliente = "Maria";
+            pedido.ValorTotal = 1000;
+
+            // Escolhendo desconto
+            IDesconto desconto = new DescontoBlackFriday();
+
+            // Escolhendo notificação
+            INotificacao notificacao = new EmailService();
+
+            // Criando objetos
+            IPedidoRepository repository = new PedidoRepository();
+            IRelatorioPedido relatorio = new RelatorioPedidoService();
+
+            // Criando serviço principal
+            PedidoService service = new PedidoService(
+                desconto,
+                notificacao,
+                repository,
+                relatorio
+            );
+
+            // Processando pedido
+            service.ProcessarPedido(pedido);
+
+            Console.ReadLine();
+        }
+    }
+}
