@@ -1,86 +1,137 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+
+class Pedido
+{
+    public string Cliente;
+    public double ValorTotal;
+}
+
+interface IDesconto
+{
+    double AplicarDesconto(double valor);
+}
+
+interface INotificacao
+{
+    void Enviar(string cliente);
+}
+
+interface IPedidoRepository
+{
+    void Salvar(Pedido pedido);
+}
+
+interface IRelatorioPedido
+{
+    void Gerar(Pedido pedido);
+}
+
+
+// DESCONTO
+
+class DescontoSimples : IDesconto
+{
+    public double AplicarDesconto(double valor)
     {
-        public void Gerar(Pedido pedido)
-        {
-            Console.WriteLine("Relatório do pedido gerado.");
-        }
+        Console.WriteLine("Aplicando 10% de desconto...");
+        return valor - (valor * 0.10);
+    }
+}
+
+
+// NOTIFICAÇÃO
+
+class EmailService : INotificacao
+{
+    public void Enviar(string cliente)
+    {
+        Console.WriteLine("Enviando email para " + cliente);
+    }
+}
+
+
+// REPOSITÓRIO
+
+class PedidoRepository : IPedidoRepository
+{
+    public void Salvar(Pedido pedido)
+    {
+        Console.WriteLine("Salvando pedido no sistema...");
+    }
+}
+
+
+// RELATÓRIO
+
+class RelatorioPedido : IRelatorioPedido
+{
+    public void Gerar(Pedido pedido)
+    {
+        Console.WriteLine("----- RELATÓRIO -----");
+        Console.WriteLine("Cliente: " + pedido.Cliente);
+        Console.WriteLine("Valor Final: R$ " + pedido.ValorTotal);
+    }
+}
+
+
+// SERVIÇO PRINCIPAL
+
+class PedidoService
+{
+    private IDesconto desconto;
+    private INotificacao notificacao;
+    private IPedidoRepository repository;
+    private IRelatorioPedido relatorio;
+
+    public PedidoService(IDesconto d, INotificacao n, IPedidoRepository r, IRelatorioPedido rel)
+    {
+        desconto = d;
+        notificacao = n;
+        repository = r;
+        relatorio = rel;
     }
 
-    
-    // SERVIÇO PRINCIPAL
-    
-    class PedidoService
+    public void ProcessarPedido(Pedido pedido)
     {
-        private IDesconto desconto;
-        private INotificacao notificacao;
-        private IPedidoRepository repository;
-        private IRelatorioPedido relatorio;
+        pedido.ValorTotal = desconto.AplicarDesconto(pedido.ValorTotal);
+        repository.Salvar(pedido);
+        notificacao.Enviar(pedido.Cliente);
+        relatorio.Gerar(pedido);
 
-        public PedidoService(
-            IDesconto desconto,
-            INotificacao notificacao,
-            IPedidoRepository repository,
-            IRelatorioPedido relatorio)
-        {
-            this.desconto = desconto;
-            this.notificacao = notificacao;
-            this.repository = repository;
-            this.relatorio = relatorio;
-        }
-
-        public void ProcessarPedido(Pedido pedido)
-        {
-            // Aplicando desconto
-            pedido.ValorTotal = desconto.AplicarDesconto(pedido.ValorTotal);
-
-            // Salvando pedido
-            repository.Salvar(pedido);
-
-            // Enviando notificação
-            notificacao.Enviar(pedido.Cliente);
-
-            // Gerando relatório
-            relatorio.Gerar(pedido);
-
-            Console.WriteLine("Pedido processado com sucesso!");
-            Console.WriteLine("Valor final: R$ " + pedido.ValorTotal);
-        }
+        Console.WriteLine("Pedido finalizado!");
     }
+}
 
-    
-    // PROGRAMA PRINCIPAL
-    
-    class Program
+
+// PROGRAMA
+
+class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            Pedido pedido = new Pedido();
+        Pedido pedido = new Pedido();
+        pedido.Cliente = "Maria";
+        pedido.ValorTotal = 1000;
 
-            pedido.Cliente = "Maria";
-            pedido.ValorTotal = 1000;
+        IDesconto desconto = new DescontoSimples();
+        INotificacao notificacao = new EmailService();
+        IPedidoRepository repository = new PedidoRepository();
+        IRelatorioPedido relatorio = new RelatorioPedido();
 
-            // Escolhendo desconto
-            IDesconto desconto = new DescontoBlackFriday();
+        PedidoService service = new PedidoService(
+            desconto,
+            notificacao,
+            repository,
+            relatorio
+        );
 
-            // Escolhendo notificação
-            INotificacao notificacao = new EmailService();
+        service.ProcessarPedido(pedido);
 
-            // Criando objetos
-            IPedidoRepository repository = new PedidoRepository();
-            IRelatorioPedido relatorio = new RelatorioPedidoService();
-
-            // Criando serviço principal
-            PedidoService service = new PedidoService(
-                desconto,
-                notificacao,
-                repository,
-                relatorio
-            );
-
-            // Processando pedido
-            service.ProcessarPedido(pedido);
-
-            Console.ReadLine();
-        }
+        Console.ReadLine();
     }
 }
